@@ -279,3 +279,21 @@ func TestExpiredItems(t *testing.T) {
 		})
 	}
 }
+
+func TestNew(t *testing.T) {
+	ca, err := New(0).LFU().BuildReturnErr()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ca.Set("c", "c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := ca.Get("c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s, ok := res.(string); ok {
+		t.Log(s)
+	}
+}

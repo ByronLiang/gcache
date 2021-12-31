@@ -173,21 +173,32 @@ func (cb *CacheBuilder) Build() Cache {
 		panic("gcache: Cache size <= 0")
 	}
 
+	c, err := cb.build()
+	if err != nil {
+		panic(err.Error())
+	}
+	return c
+}
+
+func (cb *CacheBuilder) BuildReturnErr() (Cache, error) {
+	if cb.size <= 0 && cb.tp != TYPE_SIMPLE {
+		return nil, errors.New("gcache: Cache size <= 0")
+	}
 	return cb.build()
 }
 
-func (cb *CacheBuilder) build() Cache {
+func (cb *CacheBuilder) build() (Cache, error) {
 	switch cb.tp {
 	case TYPE_SIMPLE:
-		return newSimpleCache(cb)
+		return newSimpleCache(cb), nil
 	case TYPE_LRU:
-		return newLRUCache(cb)
+		return newLRUCache(cb), nil
 	case TYPE_LFU:
-		return newLFUCache(cb)
+		return newLFUCache(cb), nil
 	case TYPE_ARC:
-		return newARC(cb)
+		return newARC(cb), nil
 	default:
-		panic("gcache: Unknown type " + cb.tp)
+		return nil, fmt.Errorf("gcache: Unknown type %s", cb.tp)
 	}
 }
 
