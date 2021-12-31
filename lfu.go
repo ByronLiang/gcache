@@ -153,7 +153,7 @@ func (c *LFUCache) getValue(key interface{}, onLoad bool) (interface{}, error) {
 			v := item.value
 			c.mu.Unlock()
 			if !onLoad {
-				c.stats.IncrHitCount()
+				c.statsAccessor.IncrHitCount()
 			}
 			return v, nil
 		}
@@ -161,7 +161,7 @@ func (c *LFUCache) getValue(key interface{}, onLoad bool) (interface{}, error) {
 	}
 	c.mu.Unlock()
 	if !onLoad {
-		c.stats.IncrMissCount()
+		c.statsAccessor.IncrMissCount()
 	}
 	return nil, KeyNotFoundError
 }

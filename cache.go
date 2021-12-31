@@ -60,7 +60,7 @@ type baseCache struct {
 	expiration       *time.Duration
 	mu               sync.RWMutex
 	loadGroup        Group
-	*stats
+	statsAccessor
 }
 
 type (
@@ -84,6 +84,7 @@ type CacheBuilder struct {
 	expiration       *time.Duration
 	deserializeFunc  DeserializeFunc
 	serializeFunc    SerializeFunc
+	stats            statsAccessor
 }
 
 func New(size int) *CacheBuilder {
@@ -168,6 +169,11 @@ func (cb *CacheBuilder) Expiration(expiration time.Duration) *CacheBuilder {
 	return cb
 }
 
+func (cb *CacheBuilder) Stats(stats statsAccessor) *CacheBuilder {
+	cb.stats = stats
+	return cb
+}
+
 func (cb *CacheBuilder) Build() Cache {
 	if cb.size <= 0 && cb.tp != TYPE_SIMPLE {
 		panic("gcache: Cache size <= 0")
@@ -212,7 +218,11 @@ func buildCache(c *baseCache, cb *CacheBuilder) {
 	c.serializeFunc = cb.serializeFunc
 	c.evictedFunc = cb.evictedFunc
 	c.purgeVisitorFunc = cb.purgeVisitorFunc
-	c.stats = &stats{}
+	if cb.stats == nil {
+		c.statsAccessor = &stats{}
+	} else {
+		c.statsAccessor = cb.stats
+	}
 }
 
 // load a new value using by specified key.

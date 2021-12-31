@@ -131,7 +131,7 @@ func (c *LRUCache) getValue(key interface{}, onLoad bool) (interface{}, error) {
 			v := it.value
 			c.mu.Unlock()
 			if !onLoad {
-				c.stats.IncrHitCount()
+				c.statsAccessor.IncrHitCount()
 			}
 			return v, nil
 		}
@@ -139,7 +139,7 @@ func (c *LRUCache) getValue(key interface{}, onLoad bool) (interface{}, error) {
 	}
 	c.mu.Unlock()
 	if !onLoad {
-		c.stats.IncrMissCount()
+		c.statsAccessor.IncrMissCount()
 	}
 	return nil, KeyNotFoundError
 }

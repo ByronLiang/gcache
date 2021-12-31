@@ -202,7 +202,7 @@ func (c *ARC) getValue(key interface{}, onLoad bool) (interface{}, error) {
 		if !item.IsExpired(nil) {
 			c.t2.PushFront(key)
 			if !onLoad {
-				c.stats.IncrHitCount()
+				c.statsAccessor.IncrHitCount()
 			}
 			return item.value, nil
 		} else {
@@ -218,7 +218,7 @@ func (c *ARC) getValue(key interface{}, onLoad bool) (interface{}, error) {
 		if !item.IsExpired(nil) {
 			c.t2.MoveToFront(elt)
 			if !onLoad {
-				c.stats.IncrHitCount()
+				c.statsAccessor.IncrHitCount()
 			}
 			return item.value, nil
 		} else {
@@ -232,7 +232,7 @@ func (c *ARC) getValue(key interface{}, onLoad bool) (interface{}, error) {
 	}
 
 	if !onLoad {
-		c.stats.IncrMissCount()
+		c.statsAccessor.IncrMissCount()
 	}
 	return nil, KeyNotFoundError
 }

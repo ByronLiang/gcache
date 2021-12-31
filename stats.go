@@ -5,6 +5,8 @@ import (
 )
 
 type statsAccessor interface {
+	IncrHitCount() uint64
+	IncrMissCount() uint64
 	HitCount() uint64
 	MissCount() uint64
 	LookupCount() uint64

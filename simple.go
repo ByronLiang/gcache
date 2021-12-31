@@ -127,7 +127,7 @@ func (c *SimpleCache) getValue(key interface{}, onLoad bool) (interface{}, error
 			v := item.value
 			c.mu.RUnlock()
 			if !onLoad {
-				c.stats.IncrHitCount()
+				c.statsAccessor.IncrHitCount()
 			}
 			return v, nil
 		}
@@ -135,7 +135,7 @@ func (c *SimpleCache) getValue(key interface{}, onLoad bool) (interface{}, error
 	}
 	c.mu.RUnlock()
 	if !onLoad {
-		c.stats.IncrMissCount()
+		c.statsAccessor.IncrMissCount()
 	}
 	return nil, KeyNotFoundError
 }
