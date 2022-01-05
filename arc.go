@@ -171,6 +171,20 @@ func (c *ARC) Get(key interface{}) (interface{}, error) {
 	return v, err
 }
 
+func (c *ARC) GetKeyTTL(key interface{}) (*time.Duration, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	item, ok := c.items[key]
+	if ok {
+		duration, isSetExpire := item.GetExpirationDuration(nil)
+		if isSetExpire {
+			return duration, nil
+		}
+		return nil, KeyNotSetWithExpireError
+	}
+	return nil, KeyNotFoundError
+}
+
 // GetIFPresent gets a value from cache pool using key if it exists.
 // If it does not exists key, returns KeyNotFoundError.
 // And send a request which refresh value for specified key if cache object has LoaderFunc.
@@ -392,6 +406,18 @@ func (it *arcItem) IsExpired(now *time.Time) bool {
 		now = &t
 	}
 	return it.expiration.Before(*now)
+}
+
+func (it *arcItem) GetExpirationDuration(now *time.Time) (*time.Duration, bool) {
+	if it.expiration == nil {
+		return nil, false
+	}
+	if now == nil {
+		t := it.clock.Now()
+		now = &t
+	}
+	duration := (*it.expiration).Sub(*now)
+	return &duration, true
 }
 
 type arcList struct {

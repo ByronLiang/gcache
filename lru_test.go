@@ -43,6 +43,34 @@ func TestLRUEvictItem(t *testing.T) {
 	}
 }
 
+func TestLRUCache_GetKeyTTL(t *testing.T) {
+	size := 10
+	gc := buildTestCache(t, TYPE_LRU, size)
+	err := gc.SetWithExpire("test-ttl", "test", 2*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(5 * time.Second)
+	ttl, err := gc.GetKeyTTL("test-ttl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ttl != nil {
+		t.Log((*ttl).Seconds())
+	}
+	err = gc.Set("none-ttl", "none")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ttlNil, err := gc.GetKeyTTL("none-ttl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ttlNil != nil {
+		t.Log(ttlNil.Seconds())
+	}
+}
+
 func TestLRUGetIFPresent(t *testing.T) {
 	testGetIFPresent(t, TYPE_LRU)
 }

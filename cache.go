@@ -14,7 +14,10 @@ const (
 	TYPE_ARC    = "arc"
 )
 
-var KeyNotFoundError = errors.New("Key not found.")
+var (
+	KeyNotFoundError         = errors.New("Key not found.")
+	KeyNotSetWithExpireError = errors.New("Key not set with expire")
+)
 
 type Cache interface {
 	// Set inserts or updates the specified key-value pair.
@@ -27,6 +30,8 @@ type Cache interface {
 	// If the key is not present in the cache and the cache does not have a LoaderFunc,
 	// return KeyNotFoundError.
 	Get(key interface{}) (interface{}, error)
+	// Get returns the ttl duration for the specified key if it is set expired
+	GetKeyTTL(key interface{}) (*time.Duration, error)
 	// GetIFPresent returns the value for the specified key if it is present in the cache.
 	// Return KeyNotFoundError if the key is not present.
 	GetIFPresent(key interface{}) (interface{}, error)

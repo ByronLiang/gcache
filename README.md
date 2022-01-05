@@ -15,6 +15,8 @@ Cache library for golang. It supports expirable Cache, LFU, LRU and ARC.
 
 * Automatically load cache if it doesn't exists. (Optional)
 
+* Get Key TTL if it had set key expire
+
 ## Install
 
 ```
