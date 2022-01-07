@@ -36,6 +36,15 @@ func testGetCache(t *testing.T, gc Cache, numbers int) {
 	}
 }
 
+func testBatchGetCache(t *testing.T, gc Cache, numbers []int) {
+	keys := make([]interface{}, len(numbers))
+	for i, n := range numbers {
+		keys[i] = fmt.Sprintf("Key-%d", n)
+	}
+	v := gc.BatchGet(false, keys)
+	t.Log(v)
+}
+
 func testGetIFPresent(t *testing.T, evT string) {
 	cache :=
 		New(8).

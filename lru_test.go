@@ -71,6 +71,13 @@ func TestLRUCache_GetKeyTTL(t *testing.T) {
 	}
 }
 
+func TestLRUCache_BatchGet(t *testing.T) {
+	size := 10
+	gc := buildTestCache(t, TYPE_LRU, size)
+	testSetCache(t, gc, size)
+	testBatchGetCache(t, gc, []int{2, 3, 6, 4, 100})
+}
+
 func TestLRUGetIFPresent(t *testing.T) {
 	testGetIFPresent(t, TYPE_LRU)
 }

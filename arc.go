@@ -341,6 +341,26 @@ func (c *ARC) GetALL(checkExpired bool) map[interface{}]interface{} {
 	return items
 }
 
+func (c *ARC) BatchGet(checkExpired bool, keys []interface{}) map[interface{}]interface{} {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	items := make(map[interface{}]interface{}, len(keys))
+	now := time.Now()
+	for _, k := range keys {
+		if item, ok := c.items[k]; ok {
+			if !checkExpired || !item.IsExpired(&now) {
+				items[k] = item.value
+			}
+		} else {
+			value, keyEmptyErr := c.getWithLoader(k, true)
+			if keyEmptyErr == nil {
+				items[k] = value
+			}
+		}
+	}
+	return items
+}
+
 // Keys returns a slice of the keys in the cache.
 func (c *ARC) Keys(checkExpired bool) []interface{} {
 	c.mu.RLock()

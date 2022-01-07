@@ -250,8 +250,28 @@ func (c *SimpleCache) GetALL(checkExpired bool) map[interface{}]interface{} {
 	items := make(map[interface{}]interface{}, len(c.items))
 	now := time.Now()
 	for k, item := range c.items {
-		if !checkExpired || c.has(k, &now) {
+		if !checkExpired || !item.IsExpired(&now) {
 			items[k] = item.value
+		}
+	}
+	return items
+}
+
+func (c *SimpleCache) BatchGet(checkExpired bool, keys []interface{}) map[interface{}]interface{} {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	items := make(map[interface{}]interface{}, len(keys))
+	now := time.Now()
+	for _, k := range keys {
+		if item, ok := c.items[k]; ok {
+			if !checkExpired || !item.IsExpired(&now) {
+				items[k] = item.value
+			}
+		} else {
+			value, keyEmptyErr := c.getWithLoader(k, true)
+			if keyEmptyErr == nil {
+				items[k] = value
+			}
 		}
 	}
 	return items

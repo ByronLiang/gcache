@@ -37,6 +37,8 @@ type Cache interface {
 	GetIFPresent(key interface{}) (interface{}, error)
 	// GetAll returns a map containing all key-value pairs in the cache.
 	GetALL(checkExpired bool) map[interface{}]interface{}
+	// Batch Get keys return a map containing the define key-value pairs in the cache
+	BatchGet(checkExpired bool, keys []interface{}) map[interface{}]interface{}
 	get(key interface{}, onLoad bool) (interface{}, error)
 	// Remove removes the specified key from the cache if the key is present.
 	// Returns true if the key was present and the key has been deleted.
