@@ -8,7 +8,7 @@ import (
 // Discards the least recently used items first.
 type LRUCache struct {
 	baseCache
-	items     map[interface{}]*list.Element
+	items     map[interface{}]*lruItem
 	evictList *list.List
 }
 
@@ -23,7 +23,7 @@ func newLRUCache(cb *CacheBuilder) *LRUCache {
 
 func (c *LRUCache) init() {
 	c.evictList = list.New()
-	c.items = make(map[interface{}]*list.Element, c.size+1)
+	c.items = make(map[interface{}]*lruItem, c.size+1)
 }
 
 func (c *LRUCache) set(key, value interface{}) (interface{}, error) {
@@ -36,10 +36,9 @@ func (c *LRUCache) set(key, value interface{}) (interface{}, error) {
 	}
 
 	// Check for existing item
-	var item *lruItem
-	if it, ok := c.items[key]; ok {
-		c.evictList.MoveToFront(it)
-		item = it.Value.(*lruItem)
+	item, ok := c.items[key]
+	if ok {
+		c.evictList.MoveToFront(item.element)
 		item.value = value
 	} else {
 		// Verify size not exceeded
@@ -47,11 +46,14 @@ func (c *LRUCache) set(key, value interface{}) (interface{}, error) {
 			c.evict(1)
 		}
 		item = &lruItem{
-			clock: c.clock,
-			key:   key,
-			value: value,
+			clock:   c.clock,
+			key:     key,
+			value:   value,
+			element: nil,
 		}
-		c.items[key] = c.evictList.PushFront(item)
+		ele := c.evictList.PushFront(item)
+		item.element = ele
+		c.items[key] = item
 	}
 
 	if c.expiration != nil {
@@ -104,8 +106,7 @@ func (c *LRUCache) GetKeyTTL(key interface{}) (*time.Duration, error) {
 	defer c.mu.RUnlock()
 	item, ok := c.items[key]
 	if ok {
-		it := item.Value.(*lruItem)
-		duration, isSetExpire := it.GetExpirationDuration(nil)
+		duration, isSetExpire := item.GetExpirationDuration(nil)
 		if isSetExpire {
 			return duration, nil
 		}
@@ -140,10 +141,9 @@ func (c *LRUCache) getValue(key interface{}, onLoad bool) (interface{}, error) {
 	c.mu.Lock()
 	item, ok := c.items[key]
 	if ok {
-		it := item.Value.(*lruItem)
-		if !it.IsExpired(nil) {
-			c.evictList.MoveToFront(item)
-			v := it.value
+		if !item.IsExpired(nil) {
+			c.evictList.MoveToFront(item.element)
+			v := item.value
 			c.mu.Unlock()
 			if !onLoad {
 				c.statsAccessor.IncrHitCount()
@@ -192,7 +192,8 @@ func (c *LRUCache) evict(count int) {
 		if ent == nil {
 			return
 		} else {
-			c.removeElement(ent)
+			entry := ent.Value.(*lruItem)
+			c.removeElement(entry)
 		}
 	}
 }
@@ -210,7 +211,7 @@ func (c *LRUCache) has(key interface{}, now *time.Time) bool {
 	if !ok {
 		return false
 	}
-	return !item.Value.(*lruItem).IsExpired(now)
+	return !item.IsExpired(now)
 }
 
 // Remove removes the provided key from the cache.
@@ -229,12 +230,10 @@ func (c *LRUCache) remove(key interface{}) bool {
 	return false
 }
 
-func (c *LRUCache) removeElement(e *list.Element) {
-	c.evictList.Remove(e)
-	entry := e.Value.(*lruItem)
+func (c *LRUCache) removeElement(entry *lruItem) {
+	c.evictList.Remove(entry.element)
 	delete(c.items, entry.key)
 	if c.evictedFunc != nil {
-		entry := e.Value.(*lruItem)
 		c.evictedFunc(entry.key, entry.value)
 	}
 }
@@ -258,8 +257,8 @@ func (c *LRUCache) GetALL(checkExpired bool) map[interface{}]interface{} {
 	items := make(map[interface{}]interface{}, len(c.items))
 	now := time.Now()
 	for k, item := range c.items {
-		if !checkExpired || !item.Value.(*lruItem).IsExpired(&now) {
-			items[k] = item.Value.(*lruItem).value
+		if !checkExpired || !item.IsExpired(&now) {
+			items[k] = item.value
 		}
 	}
 	return items
@@ -272,8 +271,8 @@ func (c *LRUCache) BatchGet(checkExpired bool, keys []interface{}) map[interface
 	now := time.Now()
 	for _, k := range keys {
 		if item, ok := c.items[k]; ok {
-			if !checkExpired || !item.Value.(*lruItem).IsExpired(&now) {
-				items[k] = item.Value.(*lruItem).value
+			if !checkExpired || !item.IsExpired(&now) {
+				items[k] = item.value
 			}
 		} else {
 			value, keyEmptyErr := c.getWithLoader(k, true)
@@ -323,9 +322,7 @@ func (c *LRUCache) Purge() {
 
 	if c.purgeVisitorFunc != nil {
 		for key, item := range c.items {
-			it := item.Value.(*lruItem)
-			v := it.value
-			c.purgeVisitorFunc(key, v)
+			c.purgeVisitorFunc(key, item.value)
 		}
 	}
 
@@ -337,6 +334,7 @@ type lruItem struct {
 	key        interface{}
 	value      interface{}
 	expiration *time.Time
+	element    *list.Element
 }
 
 // IsExpired returns boolean value whether this item is expired or not.
