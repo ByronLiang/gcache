@@ -78,6 +78,18 @@ func TestLRUCache_BatchGet(t *testing.T) {
 	testBatchGetCache(t, gc, []int{2, 3, 6, 4, 100})
 }
 
+func TestLRUCache_BatchSet(t *testing.T) {
+	size := 15
+	gc := buildTestCache(t, TYPE_LRU, size)
+	testBatchSetCache(t, gc, 8)
+	time.Sleep(1 * time.Second)
+	res1 := gc.GetALL(true)
+	t.Log(res1)
+	time.Sleep(3 * time.Second)
+	res2 := gc.GetALL(true)
+	t.Log(res2)
+}
+
 func TestLRUGetIFPresent(t *testing.T) {
 	testGetIFPresent(t, TYPE_LRU)
 }

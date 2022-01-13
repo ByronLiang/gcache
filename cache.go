@@ -15,8 +15,9 @@ const (
 )
 
 var (
-	KeyNotFoundError         = errors.New("Key not found.")
-	KeyNotSetWithExpireError = errors.New("Key not set with expire")
+	KeyNotFoundError         = errors.New("key not found")
+	KeyNotSetWithExpireError = errors.New("key not set with expire")
+	KeyBatchSetOverCacheSize = errors.New("batch set key size over cache size")
 )
 
 type Cache interface {
@@ -24,6 +25,8 @@ type Cache interface {
 	Set(key, value interface{}) error
 	// SetWithExpire inserts or updates the specified key-value pair with an expiration time.
 	SetWithExpire(key, value interface{}, expiration time.Duration) error
+	// Batch Set inserts or updates the specified key-value pair
+	BatchSet(reqs []BatchSetReq) error
 	// Get returns the value for the specified key if it is present in the cache.
 	// If the key is not present in the cache and the cache has LoaderFunc,
 	// invoke the `LoaderFunc` function and inserts the key-value pair in the cache.
@@ -53,6 +56,12 @@ type Cache interface {
 	Has(key interface{}) bool
 
 	statsAccessor
+}
+
+type BatchSetReq interface {
+	GetKey() interface{}
+	GetValue() interface{}
+	GetExpiration() *time.Duration
 }
 
 type baseCache struct {

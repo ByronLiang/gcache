@@ -35,3 +35,23 @@ for item := range entry.Value.(*freqEntry).items {
     i++
 }
 ```
+
+## Map 分组映射与分组
+
+```go
+type SimpleCache struct {
+	baseCache
+	items map[interface{}]*simpleItem
+}
+```
+
+单一 Map 会形成写入与读取热点 若基于 key 哈希，并映射指定分区，避免单一热点，提供读取与写入效率
+
+但需要指定初始分区数，并且后期无法对分区数目进行调整
+
+```go
+type SimpleCache struct {
+	baseCache
+	items []map[interface{}]*simpleItem
+}
+```

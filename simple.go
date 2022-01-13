@@ -49,6 +49,25 @@ func (c *SimpleCache) SetWithExpire(key, value interface{}, expiration time.Dura
 	return nil
 }
 
+func (c *SimpleCache) BatchSet(reqs []BatchSetReq) error {
+	if len(reqs) > c.size {
+		return KeyBatchSetOverCacheSize
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, batchSetReq := range reqs {
+		item, err := c.set(batchSetReq.GetKey(), batchSetReq.GetValue())
+		if err != nil {
+			return err
+		}
+		if batchSetReq.GetExpiration() != nil {
+			t := c.clock.Now().Add(*batchSetReq.GetExpiration())
+			item.(*simpleItem).expiration = &t
+		}
+	}
+	return nil
+}
+
 func (c *SimpleCache) set(key, value interface{}) (interface{}, error) {
 	var err error
 	if c.serializeFunc != nil {

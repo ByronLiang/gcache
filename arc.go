@@ -79,6 +79,25 @@ func (c *ARC) SetWithExpire(key, value interface{}, expiration time.Duration) er
 	return nil
 }
 
+func (c *ARC) BatchSet(reqs []BatchSetReq) error {
+	if len(reqs) > c.size {
+		return KeyBatchSetOverCacheSize
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, batchSetReq := range reqs {
+		item, err := c.set(batchSetReq.GetKey(), batchSetReq.GetValue())
+		if err != nil {
+			return err
+		}
+		if batchSetReq.GetExpiration() != nil {
+			t := c.clock.Now().Add(*batchSetReq.GetExpiration())
+			item.(*arcItem).expiration = &t
+		}
+	}
+	return nil
+}
+
 func (c *ARC) set(key, value interface{}) (interface{}, error) {
 	var err error
 	if c.serializeFunc != nil {

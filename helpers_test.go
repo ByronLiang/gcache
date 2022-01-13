@@ -170,3 +170,46 @@ func buildTestLoadingCacheWithExpiration(t *testing.T, tp string, size int, ep t
 		EvictedFunc(getSimpleEvictedFunc(t)).
 		Build()
 }
+
+type BatchSetItem struct {
+	Key        string
+	Value      interface{}
+	Expiration *time.Duration
+}
+
+func (item BatchSetItem) GetKey() interface{} {
+	return item.Key
+}
+
+func (item BatchSetItem) GetValue() interface{} {
+	return item.Value
+}
+
+func (item BatchSetItem) GetExpiration() *time.Duration {
+	return item.Expiration
+}
+
+func testBatchSetCache(t *testing.T, gc Cache, numbers int) {
+	batchList := make([]BatchSetReq, 0, numbers)
+	for i := 0; i < numbers; i++ {
+		key := fmt.Sprintf("Key-%d", i)
+		value, err := loader(key)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		item := &BatchSetItem{
+			Key:   key,
+			Value: value,
+		}
+		if i%2 == 0 {
+			duration := 2 * time.Second
+			item.Expiration = &duration
+		}
+		batchList = append(batchList, item)
+	}
+	err := gc.BatchSet(batchList)
+	if err != nil {
+		t.Fatal(err)
+	}
+}

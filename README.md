@@ -17,6 +17,8 @@ Cache library for golang. It supports expirable Cache, LFU, LRU and ARC.
 
 * Get Key TTL if it had set key expire
 
+* Add BatchGet and BatchSet method
+
 ## Install
 
 ```

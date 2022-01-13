@@ -90,6 +90,25 @@ func (c *LRUCache) SetWithExpire(key, value interface{}, expiration time.Duratio
 	return nil
 }
 
+func (c *LRUCache) BatchSet(reqs []BatchSetReq) error {
+	if len(reqs) > c.size {
+		return KeyBatchSetOverCacheSize
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, batchSetReq := range reqs {
+		item, err := c.set(batchSetReq.GetKey(), batchSetReq.GetValue())
+		if err != nil {
+			return err
+		}
+		if batchSetReq.GetExpiration() != nil {
+			t := c.clock.Now().Add(*batchSetReq.GetExpiration())
+			item.(*lruItem).expiration = &t
+		}
+	}
+	return nil
+}
+
 // Get a value from cache pool using key if it exists.
 // If it does not exists key and has LoaderFunc,
 // generate a value using `LoaderFunc` method returns value.
